@@ -1,68 +1,189 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Using useCallback and useMemo Hooks
 
-## Available Scripts
+## Setup 
+ 1 - Run
+> yarn
 
-In the project directory, you can run:
+ 2 - After run yarn to install all dependences, you must to run
+> yarn start
 
-### `yarn start`
+## Examples
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### 1 - Using useCallback to Get all post and render in _li_
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+```javascript
+import React, { useCallback, useEffect, useState } from 'react';
+import axios from 'axios';
 
-### `yarn test`
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+const PostList = ({ posts, query }) => {
+  const data = posts.filter((post) => post.title.toLowerCase().includes(query.toLowerCase()));
+  return data.map((post) => <li key={post.id}>{post.title}</li>);
+};
 
-### `yarn build`
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+function Posts() {
+  const [posts, setPosts] = useState([]);
+  const [query, setQuery] = useState('');
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+  
+  const getPosts = useCallback(async () => {
+    const { data } = await axios.get('https://jsonplaceholder.typicode.com/posts');
+    setPosts(data);
+  }, []);
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### `yarn eject`
+  useEffect(() => {
+    getPosts()
+  }, [getPosts]);
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+  return (
+    <>
+      <input type="text" onChange={(e) => setQuery(e.target.value)} />
+      <ul>
+        <PostList posts={posts} query={query}/>
+      </ul>
+    </>
+  );
+}
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+export default Posts;
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```
 
-## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 2 - Using useCallback and useMemo to Get all post and render in _li_ and filter results withou to re-render
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```javascript
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import axios from 'axios';
 
-### Code Splitting
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
+const PostList = ({ posts, query }) => {
+  const data = useMemo(() => {
+    return posts.filter((post) => post.title.toLowerCase().includes(query.toLowerCase()));
+  }, [posts, query])
+  
+  return data.map((post) => <li key={post.id}>{post.title}</li>);
+};
 
-### Analyzing the Bundle Size
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
+function Posts() {
+  const [posts, setPosts] = useState([]);
+  const [query, setQuery] = useState('');
 
-### Making a Progressive Web App
+  
+  const getPosts = useCallback(async () => {
+    const { data } = await axios.get('https://jsonplaceholder.typicode.com/posts');
+    setPosts(data);
+  }, []);
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
 
-### Advanced Configuration
+  useEffect(() => {
+    getPosts()
+  }, [getPosts]);
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
 
-### Deployment
+  return (
+    <>
+      <input type="text" onChange={(e) => setQuery(e.target.value)} />
+      <ul>
+        <PostList posts={posts} query={query}/>
+      </ul>
+    </>
+  );
+}
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
+export default Posts;
 
-### `yarn build` fails to minify
+```
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+### 3 - Using useCallback and memo to increment and decrement 
+
+```javascript
+import React, { memo, useState, useCallback} from 'react';
+
+const Reset = memo(({resetCount, makeThing}) => {
+  console.log('Re-render Reset')
+  return (
+    <div>
+      <button onClick={resetCount}>Reset</button>
+      <button onClick={() => makeThing()}>Make thing</button>
+    </div>
+  )
+});
+
+function Count() {
+  const [count, setCount] = useState(0);
+  const [query, setQuery] = useState('')
+  console.log('Re-render Parent');
+
+  const resetCount = useCallback(() => {
+    setCount(0);
+  }, [setCount]);
+
+  const makeThing = useCallback(() => {
+    setQuery('asda')
+  }, [setQuery])
+
+  return (
+    <>
+      <input type="text" onChange={(e) => setQuery(e.target.value)}/>
+      <h1>{count}</h1>
+      <button onClick={() => setCount(count + 1)}>Increment</button>
+      <button onClick={() => setCount(count - 1)}>Decrement</button>
+      <Reset resetCount={resetCount} makeThing={makeThing}/>
+    </>
+  );
+}
+
+export default Count;
+
+```
+
+
+### 3 - Basic Example using useCallback
+
+```javascript
+import React, { useState, useCallback} from 'react';
+
+const Counter = () => {
+
+    const [ score, updateScore ] = useState(0)
+
+    const callback = useCallback(() => updateScore(1), [ 1 ])
+
+    return (
+        <>
+            <h1>Counter: { score }</h1>
+            <button onClick={ callback }>Update score</button>
+        </>
+    )
+
+}
+
+```
+
+In this example, our Counter will be updated only once (on the first call). Then, as we are always passing the value 1, useCallback is smart and has memorized this parameter. So, until it changes, the updateScore function will not be called:
+
+
+
+# When I need to use _useCallback_ and _useMemo_
+
+#### useCallback
+ - Used to return memoized callbacks. In short, a slightly more “intelligent” function will return, which will only be executed again if one of its parameters changes. With this, we managed to avoid unnecessary renderings in our components, optimizing the performance of the application (similar to shouldComponentUpdate).
+
+### useMemo
+ - Unlike useEffect, RuseMemo doesn't trigger every time you change one of its dependencies.
+
+A memoized function will first check to see if the dependencies have changed since the last render. If so, it executes the function and returns the result. If false, it simply returns the cached result from the last execution.
+
+This is good for expensive operations like transforming API data or doing major calculations that you don't want to be re-doing unnecessarily
+
+```javascript
+
+useCallback(FUNCTION, PARAMETERS) // returns a function
+useMemo(() => FUNCTION, PARAMETERS) // return a value
+
+```
